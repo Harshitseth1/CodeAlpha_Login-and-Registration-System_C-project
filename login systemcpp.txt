@@ -1,0 +1,223 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cstdlib>
+#include <cctype>
+#include <algorithm>
+
+using namespace std;
+
+class UserManager {
+private:
+    // Simple hash function for password security
+    string hashPassword(const string& password) {
+        string hashed = "";
+        for (int i = 0; i < password.length(); i++) {
+            hashed += char(password[i] + 5); // Simple Caesar cipher
+        }
+        return hashed;
+    }
+ 
+    // Check if username contains only alphanumeric characters
+    bool isValidUsername(const string& username) {
+        if (username.empty() || username.length() < 3 || username.length() > 20) {
+            return false;
+        }
+ 
+        for (int i = 0; i < username.length(); i++) {
+            if (!isalnum(username[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+ 
+    // Check if password meets minimum requirements
+    bool isValidPassword(const string& password) {
+        if (password.length() < 6 || password.length() > 30) {
+            return false;
+        }
+ 
+        bool hasUpper = false, hasLower = false, hasDigit = false;
+ 
+        for (int i = 0; i < password.length(); i++) {
+            if (isupper(password[i])) hasUpper = true;
+            if (islower(password[i])) hasLower = true;
+            if (isdigit(password[i])) hasDigit = true;
+        }
+ 
+        return hasUpper && hasLower && hasDigit;
+    }
+ 
+    // Check if user file exists (duplicate username check)
+    bool userExists(const string& username) {
+        string filename = "users/" + username + ".txt";
+        ifstream file(filename.c_str());
+        return file.good();
+    }
+ 
+    // Create users directory if it doesn't exist
+    void createUsersDirectory() {
+        system("mkdir -p users");
+    }
+
+public:
+    // Register a new user
+    bool registerUser(const string& username, const string& password) {
+        // Validate username
+        if (!isValidUsername(username)) {
+            cout << "Error: Username must be 3-20 characters long and contain only letters and numbers." << endl;
+            return false;
+        }
+ 
+        // Validate password
+        if (!isValidPassword(password)) {
+            cout << "Error: Password must be 6-30 characters long and contain at least one uppercase letter, one lowercase letter, and one digit." << endl;
+            return false;
+        }
+ 
+        // Check for duplicate username
+        if (userExists(username)) {
+            cout << "Error: Username '" << username << "' already exists. Please choose a different username." << endl;
+            return false;
+        }
+ 
+        // Create users directory
+        createUsersDirectory();
+ 
+        // Create user file and store credentials
+        string filename = "users/" + username + ".txt";
+        ofstream file(filename.c_str());
+ 
+        if (!file.is_open()) {
+            cout << "Error: Could not create user file. Please check permissions." << endl;
+            return false;
+        }
+ 
+        string hashedPassword = hashPassword(password);
+        file << username << endl;
+        file << hashedPassword << endl;
+        file.close();
+ 
+        cout << "Success: User '" << username << "' registered successfully!" << endl;
+        return true;
+    }
+ 
+    // Login user
+    bool loginUser(const string& username, const string& password) {
+        // Validate input format
+        if (!isValidUsername(username)) {
+            cout << "Error: Invalid username format." << endl;
+            return false;
+        }
+ 
+        // Check if user exists
+        if (!userExists(username)) {
+            cout << "Error: Username '" << username << "' not found. Please register first." << endl;
+            return false;
+        }
+ 
+        // Read user credentials from file
+        string filename = "users/" + username + ".txt";
+        ifstream file(filename.c_str());
+ 
+        if (!file.is_open()) {
+            cout << "Error: Could not read user file." << endl;
+            return false;
+        }
+ 
+        string storedUsername, storedHashedPassword;
+        getline(file, storedUsername);
+        getline(file, storedHashedPassword);
+        file.close();
+ 
+        // Verify credentials
+        string hashedPassword = hashPassword(password);
+ 
+        if (storedUsername == username && storedHashedPassword == hashedPassword) {
+            cout << "Success: Login successful! Welcome, " << username << "!" << endl;
+            return true;
+        } else {
+            cout << "Error: Invalid password. Please try again." << endl;
+            return false;
+        }
+    }
+ 
+    // Display all registered users (for demonstration)
+    void displayUsers() {
+        cout << "\n=== Registered Users ===" << endl;
+        system("ls users/ 2>/dev/null | sed 's/.txt$//' || echo 'No users found'");
+        cout << endl;
+    }
+};
+
+// Function to get hidden password input (simple version)
+string getPassword() {
+    string password;
+    cout << "Enter password: ";
+    cin >> password;
+    return password;
+}
+
+// Display menu
+void displayMenu() {
+    cout << "\n=== User Management System ===" << endl;
+    cout << "1. Register new user" << endl;
+    cout << "2. Login" << endl;
+    cout << "3. Display all users" << endl;
+    cout << "4. Exit" << endl;
+    cout << "Choose an option (1-4): ";
+}
+
+int main() {
+    UserManager userManager;
+    int choice;
+    string username, password;
+ 
+    cout << "Welcome to the User Management System!" << endl;
+ 
+    while (true) {
+        displayMenu();
+        cin >> choice;
+ 
+        switch (choice) {
+            case 1: {
+                cout << "\n=== User Registration ===" << endl;
+                cout << "Enter username (3-20 alphanumeric characters): ";
+                cin >> username;
+ 
+                password = getPassword();
+ 
+                userManager.registerUser(username, password);
+                break;
+            }
+ 
+            case 2: {
+                cout << "\n=== User Login ===" << endl;
+                cout << "Enter username: ";
+                cin >> username;
+ 
+                password = getPassword();
+ 
+                userManager.loginUser(username, password);
+                break;
+            }
+ 
+            case 3: {
+                userManager.displayUsers();
+                break;
+            }
+ 
+            case 4: {
+                cout << "Thank you for using the User Management System. Goodbye!" << endl;
+                return 0;
+            }
+ 
+            default: {
+                cout << "Invalid choice. Please select 1-4." << endl;
+                break;
+            }
+        }
+    }
+ 
+    return 0;
