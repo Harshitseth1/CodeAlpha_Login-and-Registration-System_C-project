@@ -1,1 +1,1 @@
-# CodeAlpha_Login-and-Registration-System_C-project
+CodeAlpha_ Login and Registration system project This project regulates the Login and Registration system based on user input of Login and Registration system. It helps students compute their semester performance by summarizing individual course details and generating the final Login Project. Built using C++, this project is part of the CodeAlpha Internship Task.
